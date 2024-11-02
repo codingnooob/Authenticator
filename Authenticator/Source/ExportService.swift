@@ -1,5 +1,27 @@
 import Foundation
 
+// Example definition of PersistentToken
+struct PersistentToken {
+    // Assuming these properties exist; customize them per your actual use case
+    var identifier: Data
+    var token: Token
+
+    // Example nested Token struct definition; customize as needed
+    struct Token: Codable {
+        var value: String
+    }
+}
+
+// Example KeyValuePair struct definition; customize this too
+struct KeyValuePair: Codable {
+    var identifier: Data
+    var tokenData: Data
+
+    static func from(_ identifier: Data, _ tokenData: Data) -> KeyValuePair {
+        return KeyValuePair(identifier: identifier, tokenData: tokenData)
+    }
+}
+
 // Define a simple custom Error
 enum CustomError: Error {
     case runtimeError(String)
@@ -27,22 +49,23 @@ struct ExportService {
        let jsonTokens = tokens.map {
            TokenSerializer.toJSON($0)
        }
-       let jsonString = String(data: try! JSONSerialization.data(withJSONObject: jsonTokens, options: []), encoding: .utf8)!
-       return jsonString
-   }
+        guard let jsonString = String(data: try! JSONSerialization.data(withJSONObject: jsonTokens, options: []), encoding: .utf8) else {
+        return ""
+}
+        return jsonString
+}
 }
 
 struct TokenSerializer {
    static func toJSON(_ token: PersistentToken) -> Data {
-       guard let identifier = token.identifier.base64EncodedString(options: [])?.data(using: .utf8),
+        guard let identifierData = token.identifier.base64EncodedString(options: []).data(using: .utf8),
              let tokenData = try? JSONEncoder().encode(token.token),
-             let keychainData = try? JSONEncoder().encode(KeyValuePair.from(identifier, tokenData)) else {
+              let keychainData = try? JSONEncoder().encode(KeyValuePair.from(identifierData, tokenData)) else {
            return Data()
        }
        return keychainData
    }
 }
-
 
 // Execute the main function
 main()
